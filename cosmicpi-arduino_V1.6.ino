@@ -200,6 +200,24 @@ void setup() {
   Serial.begin(SERIAL_BAUD_RATE);
   Serial.print("ON");
 
+  //init pins that aren't used for stability
+  pinMode(PA0, INPUT);
+  pinMode(PA1, INPUT);
+  pinMode(PA6, OUTPUT);
+  pinMode(PA7, INPUT);
+  pinMode(PA8, INPUT);
+  pinMode(PB0, INPUT);
+  pinMode(PB1, OUTPUT);
+  pinMode(PB4, INPUT);
+
+  pinMode(PC9, INPUT);
+  pinMode(PC11, INPUT);
+  pinMode(PC12, INPUT);
+  pinMode(PC13, INPUT);
+  pinMode(PC14, INPUT);
+  pinMode(PC15, INPUT);
+  
+
   if (leds_on) {
     pinMode(EVT_PIN, OUTPUT);       // Pin for the cosmic ray event
     pinMode(PPS_PIN, OUTPUT);       // Pin for the PPS (LED pin)
@@ -367,30 +385,22 @@ void setup() {
   attachInterrupt(digitalPinToInterrupt(PA15), GPS_PPS, RISING);
   attachInterrupt(digitalPinToInterrupt(PB10), Event_Int, RISING);
 
-  Serial.println("INFO: Running\n");
-
+  //Serial.println();
+sprintf(txt, "INFO: Running\n");
+    WriteToOutputBuff(txt);
 }
 
-void loop() {
-  pipeGPS();
-  ReadFromOutputBuff();
-
-  //turn off the event led after the set time
-    if (millis() >= (last_event_LED + event_LED_time)){
-    if (leds_on) {
-      digitalWrite(EVT_PIN, LOW);
-    }
-  }
-}
 
 void GPS_PPS()
 {
+  //now PPS is coming through, we can switch off the internal timer.
+  pps_recieved = true;
 
   //stop listening for events while we process this interrupt
   detachInterrupt(digitalPinToInterrupt(PB10));
 
   //now PPS is coming through, we can switch off the internal timer.
-  pps_recieved = true;
+  //pps_recieved = true;
   
   //set the pps micros value as the micro time now, and buffer the last value;
   pps_micros_old = pps_micros;
@@ -418,7 +428,9 @@ void GPS_PPS()
 //now print the sensors
  //Serial.print("Sensor section");
   lsm.read();  /* ask it to read in the data */ 
-
+  //debug cmd
+  //sprintf(txt, "readfail;\n");
+  //WriteToOutputBuff(txt);
   /* Get a new sensor event */ 
   
   sensors_event_t a, m, g, temp;
@@ -484,8 +496,30 @@ Serial.println(';');
 }
 
 
+
+
+
+void loop() {
+  pipeGPS();
+  ReadFromOutputBuff();
+
+  //turn off the event led after the set time
+    if (millis() >= (last_event_LED + event_LED_time)){
+    if (leds_on) {
+      digitalWrite(EVT_PIN, LOW);
+    }
+  }
+}
+
+
 void Event_Int()
 {
+   detachInterrupt(digitalPinToInterrupt(PB10));
+
+
+  //only count if we've got a PPS
+if (pps_recieved == true){
+
   /*  WriteToOutputBuff("evtx:");
     ltoa(eventCount,numconvbuff,10);
     WriteToOutputBuff(numconvbuff);
@@ -508,6 +542,9 @@ void Event_Int()
   if (leds_on) {
     digitalWrite(EVT_PIN, HIGH);
   }
+  
+  attachInterrupt(digitalPinToInterrupt(PB10), Event_Int, RISING);
+}
 }
 
 byte setHV(byte _send)  // This function is what bitbangs the data
