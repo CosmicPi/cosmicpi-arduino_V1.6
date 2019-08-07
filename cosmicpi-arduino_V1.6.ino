@@ -436,13 +436,16 @@ void GPS_PPS()
   sensors_event_t a, m, g, temp;
   lsm.getEvent(&a, &m, &g, &temp); 
 
-  float  pressure = ps.readPressureMillibars();
+  float pressure = ps.readPressureMillibars();
   float altitude = ps.pressureToAltitudeMeters(pressure);
   float temperature = ps.readTemperatureC();
   
   float humd = myHumidity.readHumidity();
   float temphum = myHumidity.readTemperature();
 
+Serial.print("Pressure: ");
+Serial.print(pressure, 6);
+Serial.println(';');
 Serial.print("Altitude: ");
 Serial.print(altitude, 6);
 Serial.println(';');
